@@ -1,0 +1,14 @@
+{
+  "name": "npm-versions-tracker",
+  "version": "1.0.0",
+  "description": "Track npm download statistics",
+  "main": "index.js",
+  "scripts": {
+    "collect-stats": "tsx collect-stats.ts"
+  },
+  "devDependencies": {
+    "tsx": "^4.0.0",
+    "typescript": "^5.0.0",
+    "@types/node": "^20.0.0"
+  }
+}
