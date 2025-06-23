@@ -18,6 +18,9 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+
       - name: Use Node.js 22.x
         uses: actions/setup-node@v4
         with:
@@ -25,10 +28,10 @@ jobs:
           cache: "pnpm"
 
       - name: Install dependencies
-        run: npm ci
+        run: pnpm install
 
       - name: Collect npm statistics
-        run: npm run collect-stats
+        run: pnpm collect-stats
 
       - name: Configure git
         run: |
