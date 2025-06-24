@@ -54,6 +54,9 @@ const PACKAGES = [
   "@mui/x-telemetry",
 
   "@base-ui-components/react",
+
+  "react",
+  "@emotion/react",
 ];
 
 async function fetchWithRetry(url: string, retries = 3): Promise<Response> {
