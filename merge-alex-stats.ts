@@ -67,7 +67,8 @@ async function getSeedDates(): Promise<string[] | null> {
     const content = await readdir(dataDir, { withFileTypes: true });
     return content
       .filter((filename) => filename.isFile())
-      .map((filename) => filename.name);
+      .map((filename) => filename.name)
+      .sort();
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code === "ENOENT") {
       return null;
@@ -148,6 +149,19 @@ function updateHistoricalData(
   }
 }
 
+function onlyDay(date: Date) {
+  return new Date(
+    date.getFullYear(),
+    date.getMonth(),
+    date.getDate(),
+    0,
+    0,
+    0,
+    0
+  );
+}
+const DAY_MILLISECONDS = 24 * 60 * 60 * 1000;
+
 async function processPackage(packageName: string): Promise<void> {
   // Fetch current stats
   const dates = await getSeedDates();
@@ -171,6 +185,7 @@ async function processPackage(packageName: string): Promise<void> {
   }
 
   let dayAdded = 0;
+  let lastDateAdded: Date | null = null;
   for (const date of dates) {
     const timestamp = new Date(date.split(".")[0]);
     const day = timestamp.getUTCDay(); // day of the week (sunday => 0)
@@ -186,8 +201,14 @@ async function processPackage(packageName: string): Promise<void> {
      * saturday: 53
      * sunday: 63
      */
-    if (day !== 3) {
-      // using wednesday
+
+    const isFirstDayOfTheWeek =
+      lastDateAdded === null || // It's the first date of the dataset
+      lastDateAdded.getUTCDay() >= day || // We are after last day but before in week order. So in the next week
+      onlyDay(timestamp).getTime() - onlyDay(lastDateAdded).getTime() >
+        6.5 * DAY_MILLISECONDS; // We have more than 6 days difference with the previous day
+
+    if (!isFirstDayOfTheWeek) {
       continue;
     }
 
@@ -204,6 +225,7 @@ async function processPackage(packageName: string): Promise<void> {
       timestamp.getTime(),
       existingData
     );
+    lastDateAdded = timestamp;
     dayAdded += 1;
   }
 
