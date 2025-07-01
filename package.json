@@ -4,7 +4,8 @@
   "description": "Track npm download statistics",
   "main": "index.js",
   "scripts": {
-    "collect-stats": "tsx collect-stats.ts"
+    "collect-stats": "tsx collect-stats.ts",
+    "initiate-stats": "tsx merge-alex-stats.ts"
   },
   "devDependencies": {
     "tsx": "^4.0.0",
