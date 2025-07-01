@@ -162,6 +162,34 @@ function onlyDay(date: Date) {
 }
 const DAY_MILLISECONDS = 24 * 60 * 60 * 1000;
 
+function getWeekKey(date: Date): string {
+  const sunday = new Date(date);
+  const dayOfWeek = date.getUTCDay();
+  sunday.setUTCDate(date.getUTCDate() - dayOfWeek);
+  return onlyDay(sunday).toISOString().split('T')[0];
+}
+
+function batchDatesByWeek(dates: string[]): Map<string, string[]> {
+  const weekMap = new Map<string, string[]>();
+  
+  for (const date of dates) {
+    const timestamp = new Date(date.split(".")[0]);
+    const weekKey = getWeekKey(timestamp);
+    
+    if (!weekMap.has(weekKey)) {
+      weekMap.set(weekKey, []);
+    }
+    weekMap.get(weekKey)!.push(date);
+  }
+  
+  // Sort dates within each week
+  for (const dates of weekMap.values()) {
+    dates.sort();
+  }
+  
+  return weekMap;
+}
+
 async function processPackage(packageName: string): Promise<void> {
   // Fetch current stats
   const dates = await getSeedDates();
@@ -184,55 +212,47 @@ async function processPackage(packageName: string): Promise<void> {
     throw new Error(`existing data not found for ${packageName}`);
   }
 
-  let dayAdded = 0;
-  let lastDateAdded: Date | null = null;
-  for (const date of dates) {
-    const timestamp = new Date(date.split(".")[0]);
-    const day = timestamp.getUTCDay(); // day of the week (sunday => 0)
+  // Batch dates by week starting on Sunday
+  const weekMap = batchDatesByWeek(dates);
+  let weeksAdded = 0;
 
-    /**
-     * Data set values per week day
-     *
-     * monday: 129
-     * tuesday: 135
-     * wednesday: 137
-     * thursday: 130
-     * friday: 127
-     * saturday: 53
-     * sunday: 63
-     */
-
-    const isFirstDayOfTheWeek =
-      lastDateAdded === null || // It's the first date of the dataset
-      lastDateAdded.getUTCDay() >= day || // We are after last day but before in week order. So in the next week
-      onlyDay(timestamp).getTime() - onlyDay(lastDateAdded).getTime() >
-        6.5 * DAY_MILLISECONDS; // We have more than 6 days difference with the previous day
-
-    if (!isFirstDayOfTheWeek) {
+  // Process each week chronologically
+  const weekKeys = Array.from(weekMap.keys()).sort();
+  
+  for (const weekKey of weekKeys) {
+    const weekDates = weekMap.get(weekKey)!;
+    
+    // Find the first available date in this week with data for this package
+    let dataFound = false;
+    for (const date of weekDates) {
+      const data = await readSeedData(date);
+      
+      if (data && data[packageName] && data[packageName].downloads) {
+        const timestamp = new Date(date.split(".")[0]);
+        
+        // Update historical data with this week's data
+        updateHistoricalData(
+          data[packageName].downloads,
+          timestamp.getTime(),
+          existingData
+        );
+        
+        dataFound = true;
+        weeksAdded += 1;
+        break; // Only use the first available date per week
+      }
+    }
+    
+    if (!dataFound) {
+      // No data found for this package in this entire week
       continue;
     }
-
-    const data = await readSeedData(date);
-
-    if (!data || !data[packageName] || !data[packageName].downloads) {
-      // No data for this package
-      continue;
-    }
-
-    // Update historical data
-    updateHistoricalData(
-      data[packageName].downloads,
-      timestamp.getTime(),
-      existingData
-    );
-    lastDateAdded = timestamp;
-    dayAdded += 1;
   }
 
   // Write back to file
   await writeFile(filePath, JSON.stringify(existingData));
 
-  console.log(`✅ Updated stats for ${packageName}: +${dayAdded} week added`);
+  console.log(`✅ Updated stats for ${packageName}: +${weeksAdded} weeks added`);
 }
 
 async function main() {
