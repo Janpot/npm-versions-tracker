@@ -58,6 +58,7 @@ const PACKAGES = [
   "react",
   "@emotion/react",
   "tailwindcss",
+  "typescript",
 ];
 
 async function fetchWithRetry(url: string, retries = 3): Promise<Response> {
