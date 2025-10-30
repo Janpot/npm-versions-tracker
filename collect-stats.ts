@@ -23,6 +23,9 @@ interface HistoricalData {
 }
 
 const PACKAGES = [
+  "@material-ui/core",
+  "@material-ui/icons",
+  
   "@mui/codemod",
   "@mui/core-downloads-tracker",
   "@mui/icons-material",
