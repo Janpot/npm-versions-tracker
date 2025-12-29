@@ -56,7 +56,7 @@ const PACKAGES = [
   "@mui/x-internals",
   "@mui/x-telemetry",
 
-  "@base-ui-components/react",
+  "@base-ui/react",
 
   "react",
   "@emotion/react",
