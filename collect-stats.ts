@@ -55,7 +55,8 @@ const PACKAGES = [
   "@mui/x-license",
   "@mui/x-internals",
   "@mui/x-telemetry",
-
+  
+  "@base-ui-components/react",
   "@base-ui/react",
 
   "react",
